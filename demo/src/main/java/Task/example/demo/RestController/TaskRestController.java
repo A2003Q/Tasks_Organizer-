@@ -8,9 +8,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -31,18 +33,31 @@ public class TaskRestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof Postions) {
-            Postions manager = (Postions) principal;
-            if (!"MANAGER".equals(manager.getRole().name())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            taskDTO.setManager_email(manager.getEmail());
-            return ResponseEntity.ok(taskService.createTask(taskDTO));
+        // Ensure the principal is a valid user
+        String email;
+        Collection<? extends GrantedAuthority> authorities;
+        if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.User) {
+            org.springframework.security.core.userdetails.User userDetails =
+                    (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+            email = userDetails.getUsername(); // Email from UserDetails
+            authorities = userDetails.getAuthorities();
+        } else if (authentication.getPrincipal() instanceof String) {
+            email = authentication.getPrincipal().toString(); // Email from JWT principal
+            authorities = authentication.getAuthorities();
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        // Check if user has MANAGER role
+        boolean isManager = authorities.stream()
+                .anyMatch(auth -> auth.getAuthority().equals("MANAGER"));
+
+        if (!isManager) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        taskDTO.setManager_email(email); // Assign authenticated manager's email
+        return ResponseEntity.ok(taskService.createTask(taskDTO));
     }
 
 

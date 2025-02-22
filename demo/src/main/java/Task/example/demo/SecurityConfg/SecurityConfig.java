@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/tasks/create").hasAuthority("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/tasks/{id}").hasAuthority("MANAGER")
                 .requestMatchers(HttpMethod.DELETE, "/tasks/{id}").hasAuthority("MANAGER")
-                .requestMatchers(HttpMethod.GET, "/tasks/employee/{employeeName}").hasAuthority("EMPLOYEE")
+                .requestMatchers(HttpMethod.GET, "/tasks/employee/**").hasAuthority("EMPLOYEE")
                 .requestMatchers(HttpMethod.GET, "/tasks").authenticated()
                 .requestMatchers("/profile", "/api/messages/send", "/api/messages/inbox").authenticated()
                 .anyRequest().authenticated();  // Require authentication for all other endpoints
