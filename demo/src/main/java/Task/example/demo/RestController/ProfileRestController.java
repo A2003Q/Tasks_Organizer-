@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping
 public class ProfileRestController {
@@ -26,25 +28,28 @@ public class ProfileRestController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();  // Get the email from the authentication token
+        String email = authentication.getName();
+
+        System.out.println("Extracted email from authentication: " + email); // Debugging
 
         if (email == null || email.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email not found in authentication.");
         }
 
-        // Fetch the user based on the email
-        Postions user = postionsService.findByEmail(email);
+        Optional<Postions> user = postionsService.findByEmail(email);
 
-        if (user == null) {
+        if (user.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
         }
 
-        // Create a ProfileDTO to return
-        ProfileDTO profileDTO = new ProfileDTO(user.getName(), user.getEmail(), user.getRole().toString());
+        // Safely retrieve user information
+        Postions userDetails = user.get();
 
+        ProfileDTO profileDTO = new ProfileDTO(userDetails.getName(), userDetails.getEmail(), userDetails.getRole().toString());
         return ResponseEntity.ok(profileDTO);
     }
 }
+
 
 
 

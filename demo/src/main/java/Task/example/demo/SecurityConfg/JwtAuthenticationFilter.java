@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -68,11 +69,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = decodedJWT.getClaim("role").asString();
 
                 // Authenticate the user by setting up Spring Security context
-                Postions manager = postionsService.findByEmail(username); // Assuming you have such a method
+                Optional<Postions> manager = postionsService.findByEmail(username); // Returns Optional<Postions>
 
-                if (manager != null) {
+                if (manager.isPresent()) {
+                    Postions user = manager.get();
                     UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(manager, null, AuthorityUtils.createAuthorityList(role));
+                            new UsernamePasswordAuthenticationToken(user.getEmail(), null, AuthorityUtils.createAuthorityList(role));
+
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     logger.info("Authenticated user: " + username + " with role: " + role);
                 }
@@ -85,8 +88,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }
+
 
 
 

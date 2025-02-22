@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class PostionsServiceImpl implements PostionsService{
     private final PostionsDAO postionsDAO ;
@@ -19,12 +21,17 @@ public class PostionsServiceImpl implements PostionsService{
     private final EmployeeDAO employeeDAO;
     private final BCryptPasswordEncoder passwordEncoder;
 
+
+
+
+
     @Autowired
     public PostionsServiceImpl(EmployeeDAO employeeDAO, PostionsDAO postionsDAO, ManagerDAO managerDAO, BCryptPasswordEncoder passwordEncoder) {
         this.employeeDAO = employeeDAO;
         this.postionsDAO = postionsDAO;
         this.managerDAO = managerDAO;
         this.passwordEncoder = passwordEncoder;
+
     }
 
     @Override
@@ -56,15 +63,18 @@ public class PostionsServiceImpl implements PostionsService{
         postions.setRole(Postions.Role.valueOf(dto.getRole().toUpperCase()));
     }
     @Override
-    public Postions findByEmail(String email) {
+    public Optional<Postions> findByEmail(String email) {
         return postionsDAO.findByEmail(email);
     }
+
+
+
+
     // Manually check if the email exists in the database
     public boolean existsByEmail(String email) {
-        // Query the userDAO to check if the email already exists
-        Postions position = postionsDAO.findByEmail(email);
-        return position != null;  // Returns true if a user is found, otherwise false
+        return postionsDAO.findByEmail(email).isPresent();
     }
+
     @Override
     public boolean validatePassword(String rawPassword, String storedPassword) {
         return passwordEncoder.matches(rawPassword, storedPassword);

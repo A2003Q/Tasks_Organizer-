@@ -18,10 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api2")
@@ -42,33 +39,36 @@ public class LoginRestController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginDTO loginDTO) {
-        Postions postions = postionsService.findByEmail(loginDTO.getEmail());
+        Optional<Postions> postions = postionsService.findByEmail(loginDTO.getEmail());
 
-        if (postions== null) {
+        // Check if the user is not present in the database
+        if (postions.isEmpty()) {
             logger.warn("Login failed: User not found with email {}", loginDTO.getEmail());
             return ResponseEntity.status(401).body("User not found");
         }
 
-        if (!passwordEncoder.matches(loginDTO.getPassword(), postions.getPassword())) {
+        // Check if the password matches
+        if (!passwordEncoder.matches(loginDTO.getPassword(), postions.get().getPassword())) {
             logger.warn("Login failed: Invalid password for user {}", loginDTO.getEmail());
             return ResponseEntity.status(401).body("Invalid password");
         }
 
-        Postions.Role role = postions.getRole();
+        Postions.Role role = postions.get().getRole();
         if (role == null) {
             logger.error("Login failed: User role is not defined for user {}", loginDTO.getEmail());
             return ResponseEntity.status(500).body("User role is not defined");
         }
 
-        String token = generateToken(postions);
+        String token = generateToken(postions.get());
 
         Map<String, String> response = new HashMap<>();
         response.put("role", role.name());
         response.put("token", token);
 
-        logger.info("User {} logged in successfully with role {}", postions.getEmail(), role.name());
+        logger.info("User {} logged in successfully with role {}", postions.get().getEmail(), role.name());
         return ResponseEntity.ok(response);
     }
+
 
     private String generateToken(Postions postions) {
         return JWT.create()

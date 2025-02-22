@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/tasks/{id}").hasAuthority("MANAGER")
                 .requestMatchers(HttpMethod.GET, "/tasks/employee/{employeeName}").hasAuthority("EMPLOYEE")
                 .requestMatchers(HttpMethod.GET, "/tasks").authenticated()
-                .requestMatchers("/profile").authenticated()
+                 .requestMatchers("/profile").authenticated()
                 .anyRequest().authenticated();  // Require authentication for all other endpoints
 
         // Add the JWT filter before UsernamePasswordAuthenticationFilter
