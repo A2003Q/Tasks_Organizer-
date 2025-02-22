@@ -10,5 +10,4 @@ public interface PostionsService {
     Optional<Postions> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean validatePassword(String rawPassword, String storedPassword);
-
 }

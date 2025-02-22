@@ -1,5 +1,7 @@
 package Task.example.demo.SecurityConfg;
 
+import Task.example.demo.DAO.AppUserRepository;
+import Task.example.demo.Entity.AppUser;
 import Task.example.demo.Entity.Postions;
 import Task.example.demo.Service.PostionsService;
 import com.auth0.jwt.JWT;
@@ -38,10 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String SECRET_KEY;
 
     private final PostionsService postionsService;
+    private final AppUserRepository appUserRepository;
 
     @Autowired
-    public JwtAuthenticationFilter(PostionsService postionsService) {
+    public JwtAuthenticationFilter(PostionsService postionsService, AppUserRepository appUserRepository) {
         this.postionsService = postionsService;
+        this.appUserRepository = appUserRepository;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
@@ -52,43 +56,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         logger.info("JWT Filter Triggered for Request: " + request.getRequestURI());
 
-        // Get the JWT token from Authorization header
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7); // Remove "Bearer " prefix
+            String token = authHeader.substring(7);
 
             try {
-                // Decode the token using the secret key
                 Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
                 DecodedJWT decodedJWT = JWT.require(algorithm)
                         .build()
                         .verify(token);
 
-                // Extract claims (for example, the username and role)
                 String username = decodedJWT.getSubject();
                 String role = decodedJWT.getClaim("role").asString();
 
-                // Authenticate the user by setting up Spring Security context
-                Optional<Postions> manager = postionsService.findByEmail(username); // Returns Optional<Postions>
-
+                Optional<Postions> manager = postionsService.findByEmail(username);
                 if (manager.isPresent()) {
                     Postions user = manager.get();
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(user.getEmail(), null, AuthorityUtils.createAuthorityList(role));
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    logger.info("Authenticated user: " + username + " with role: " + role);
+
+                    Optional<AppUser> existingUser = appUserRepository.findByEmail(username);
+                    if (!existingUser.isPresent()) {
+                        AppUser newUser = new AppUser();
+                        newUser.setEmail(username);
+                        newUser.setRole(role);
+                        appUserRepository.save(newUser); // Save new user in AppUser table
+                    }
                 }
             } catch (Exception e) {
                 logger.error("Invalid JWT token", e);
             }
-        } else {
-            logger.warn("Authorization header missing or invalid");
         }
 
         filterChain.doFilter(request, response);
     }
+
 }
+
 
 
 

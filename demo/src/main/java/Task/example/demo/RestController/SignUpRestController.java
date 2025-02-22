@@ -3,6 +3,7 @@ package Task.example.demo.RestController;
 import Task.example.demo.DAO.SignUpDTO;
 import Task.example.demo.Service.PostionsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,13 +17,17 @@ public class SignUpRestController {
 
     @Autowired
     public SignUpRestController(PostionsService postionsService) {
-        this.postionsService=postionsService;
+        this.postionsService = postionsService;
     }
 
     @PostMapping("/signup")
     public ResponseEntity<String> registerUser(@RequestBody SignUpDTO signUpDTO) {
-        postionsService.registerUser(signUpDTO);
-        return ResponseEntity.ok("User registered successfully!");
+        try {
+            postionsService.registerUser(signUpDTO);
+            return ResponseEntity.ok("User registered successfully!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
-
 }
+

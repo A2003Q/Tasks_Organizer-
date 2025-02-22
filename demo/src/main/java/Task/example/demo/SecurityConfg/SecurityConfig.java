@@ -1,5 +1,6 @@
 package Task.example.demo.SecurityConfg;
 
+import Task.example.demo.DAO.AppUserRepository;
 import Task.example.demo.Service.PostionsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -19,16 +20,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final PostionsService postionsService;
+    private final AppUserRepository appUserRepository;
 
     @Autowired
-    public SecurityConfig(@Lazy PostionsService postionsService) {
+    public SecurityConfig(@Lazy PostionsService postionsService, AppUserRepository appUserRepository) {
         this.postionsService = postionsService;
+        this.appUserRepository = appUserRepository;
     }
 
-    // Define JwtAuthenticationFilter as a Bean
+    // Define JwtAuthenticationFilter as a Bean, passing both dependencies
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(postionsService);  // Pass PostionsService here
+        return new JwtAuthenticationFilter(postionsService,appUserRepository);  // Pass both dependencies
     }
 
     @Bean
@@ -46,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/tasks/{id}").hasAuthority("MANAGER")
                 .requestMatchers(HttpMethod.GET, "/tasks/employee/{employeeName}").hasAuthority("EMPLOYEE")
                 .requestMatchers(HttpMethod.GET, "/tasks").authenticated()
-                 .requestMatchers("/profile").authenticated()
+                .requestMatchers("/profile", "/api/messages/send", "/api/messages/inbox").authenticated()
                 .anyRequest().authenticated();  // Require authentication for all other endpoints
 
         // Add the JWT filter before UsernamePasswordAuthenticationFilter
@@ -60,5 +63,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
 
 
